@@ -413,7 +413,7 @@ def main():
     parser.add_argument('--nometa',
                         action='store_true',
                         help='with --list, exclude hostvars')
-    default_root = os.environ.get('TFSTATE_ROOT', os.path.join(os.path.dirname(__file__),
+    default_root = os.environ.get('TF_VAR_STATE_ROOT', os.path.join(os.path.dirname(__file__),
                                                         '..', '..', ))
     parser.add_argument('--root',
                         default=default_root,
