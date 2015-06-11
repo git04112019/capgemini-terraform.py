@@ -24,6 +24,7 @@ from functools import wraps
 import json
 import os
 import re
+import yaml
 
 VERSION = '0.3.0pre'
 
@@ -212,7 +213,9 @@ def aws_host(resource, module_name):
     attrs = {
         'ami': raw_attrs['ami'],
         'availability_zone': raw_attrs['availability_zone'],
-        'ebs_block_device': parse_attr_list(raw_attrs, 'ebs_block_device'),
+        # NEEDS FIX: as ebs_block_device format is ebs_block_device.2576023345.property
+        # and parse_attr_list use the second value so 2576023345 as index so it runs out of memory.
+        #'ebs_block_device': parse_attr_list(raw_attrs, 'ebs_block_device'),
         'ebs_optimized': parse_bool(raw_attrs['ebs_optimized']),
         'ephemeral_block_device': parse_attr_list(raw_attrs,
                                                   'ephemeral_block_device'),
@@ -256,6 +259,41 @@ def aws_host(resource, module_name):
                   for subnet in attrs['subnet'].items())
 
     # groups specific to microservices-infrastructure
+    groups.append('role=' + attrs['role'])
+    groups.append('dc=' + attrs['consul_dc'])
+
+    return name, attrs, groups
+
+@parses('digitalocean_droplet')
+@calculate_mi_vars
+def digitalocean_host(resource, tfvars=None):
+
+    raw_attrs = resource['primary']['attributes']
+    groups = []
+
+    # general attrs
+    attrs = {
+        'name': raw_attrs['name'],
+        'metadata': yaml.load(raw_attrs['user_data']),
+        'region': raw_attrs['region'],
+        'size': raw_attrs['size'],
+        # ansible
+        'ansible_ssh_port': 22,
+        # Could be passed from the command line via environment variable
+        'ansible_ssh_user': 'root',
+        'ansible_ssh_host': raw_attrs['ipv4_address'],
+    }
+
+    # attrs specific to microservices-infrastructure
+    attrs.update({
+        'consul_dc': _clean_dc(attrs['metadata'].get('dc', attrs['region'])),
+        'role': attrs['metadata'].get('role', 'none')
+    })
+
+    # groups specific to microservices-infrastructure
+    name = attrs.get('name')
+
+    groups.append('region=' + attrs['region'])
     groups.append('role=' + attrs['role'])
     groups.append('dc=' + attrs['consul_dc'])
 
@@ -375,8 +413,8 @@ def main():
     parser.add_argument('--nometa',
                         action='store_true',
                         help='with --list, exclude hostvars')
-    default_root = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                '..', '..', ))
+    default_root = os.environ.get('TFSTATE_ROOT', os.path.join(os.path.dirname(__file__),
+                                                        '..', '..', ))
     parser.add_argument('--root',
                         default=default_root,
                         help='custom root to search for `.tfstate`s in')
