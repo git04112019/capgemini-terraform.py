@@ -235,7 +235,7 @@ def aws_host(resource, module_name):
                                              'vpc_security_group_ids'),
         # ansible-specific
         'ansible_ssh_port': 22,
-        'ansible_ssh_user': raw_attrs.ge('tags.sshUser', 'ubuntu'),
+        'ansible_ssh_user': raw_attrs.get('tags.sshUser', 'ubuntu'),
         'ansible_ssh_host': raw_attrs.get('public_ip', raw_attrs['private_ip']),
     }
 
