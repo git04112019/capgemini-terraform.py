@@ -112,18 +112,12 @@ def _parse_prefix(source, prefix, sep='.'):
 
 
 def parse_attr_list(source, prefix, sep='.'):
-    size_key = '%s%s#' % (prefix, sep)
-    try:
-        size = int(source[size_key])
-    except KeyError:
-        return []
-
-    attrs = [{} for _ in range(size)]
+    attrs = defaultdict(dict)
     for compkey, value in _parse_prefix(source, prefix, sep):
-        nth, key = compkey.split(sep, 1)
-        attrs[int(nth)][key] = value
+        idx, key = compkey.split(sep, 1)
+        attrs[idx][key] = value
 
-    return attrs
+    return attrs.values()
 
 
 def parse_dict(source, prefix, sep='.'):
@@ -213,9 +207,7 @@ def aws_host(resource, module_name):
     attrs = {
         'ami': raw_attrs['ami'],
         'availability_zone': raw_attrs['availability_zone'],
-        # NEEDS FIX: as ebs_block_device format is ebs_block_device.2576023345.property
-        # and parse_attr_list use the second value so 2576023345 as index so it runs out of memory.
-        #'ebs_block_device': parse_attr_list(raw_attrs, 'ebs_block_device'),
+        'ebs_block_device': parse_attr_list(raw_attrs, 'ebs_block_device'),
         'ebs_optimized': parse_bool(raw_attrs['ebs_optimized']),
         'ephemeral_block_device': parse_attr_list(raw_attrs,
                                                   'ephemeral_block_device'),
@@ -365,6 +357,55 @@ def gce_host(resource, module_name):
 
     return name, attrs, groups
 
+@parses('azure_instance')
+@calculate_mi_vars
+def azure_host(resource, module_name):
+    name = resource['primary']['attributes']['name']
+    raw_attrs = resource['primary']['attributes']
+
+    groups = []
+
+    attrs = {
+        'automatic_updates': raw_attrs['automatic_updates'],
+        'description': raw_attrs['description'],
+        'hosted_service_name': raw_attrs['hosted_service_name'],
+        'id': raw_attrs['id'],
+        'image': raw_attrs['image'],
+        'ip_address': raw_attrs['ip_address'],
+        'location': raw_attrs['location'],
+        'name': raw_attrs['name'],
+        'reverse_dns': raw_attrs['reverse_dns'],
+        'security_group': raw_attrs['security_group'],
+        'size': raw_attrs['size'],
+        'ssh_key_thumbprint': raw_attrs['ssh_key_thumbprint'],
+        'subnet': raw_attrs['subnet'],
+        'username': raw_attrs['username'],
+        'vip_address': raw_attrs['vip_address'],
+        'virtual_network': raw_attrs['virtual_network'],
+        'endpoint': parse_attr_list(raw_attrs, 'endpoint'),
+        # ansible
+        'ansible_ssh_port': 22,
+        'ansible_ssh_user': raw_attrs['username'],
+        'ansible_ssh_host': raw_attrs['vip_address'],
+    }
+
+    # attrs specific to microservices-infrastructure
+    attrs.update({
+        'consul_dc': attrs['location'].lower().replace(" ", "-"),
+        'role': attrs['description']
+    })
+
+    # groups specific to microservices-infrastructure
+    groups.extend(['azure_image=' + attrs['image'],
+                   'azure_location=' + attrs['location'].lower().replace(" ", "-"),
+                   'azure_username=' + attrs['username'],
+                   'azure_security_group=' + attrs['security_group']])
+
+    # groups specific to microservices-infrastructure
+    groups.append('role=' + attrs['role'])
+    groups.append('dc=' + attrs['consul_dc'])
+
+    return name, attrs, groups
 
 ## QUERY TYPES
 def query_host(hosts, target):
