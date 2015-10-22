@@ -381,7 +381,7 @@ def azure_host(resource, module_name):
         'subnet': raw_attrs['subnet'],
         'username': raw_attrs['username'],
         'vip_address': raw_attrs['vip_address'],
-        'virtual_network': raw_attrs['virtual_network'],
+        'virtual_network': parse_attr_list(raw_attrs, 'virtual_network'),
         'endpoint': parse_attr_list(raw_attrs, 'endpoint'),
         # ansible
         'ansible_ssh_port': 22,
