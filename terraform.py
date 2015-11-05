@@ -380,13 +380,13 @@ def azure_host(resource, module_name):
         'ssh_key_thumbprint': raw_attrs['ssh_key_thumbprint'],
         'subnet': raw_attrs['subnet'],
         'username': raw_attrs['username'],
-        'vip_address': raw_attrs['vip_address'],
-        'virtual_network': parse_attr_list(raw_attrs, 'virtual_network'),
+        'vip_address': raw_attrs.get('vip_address'),
+        'virtual_network': raw_attrs.get('virtual_network'),
         'endpoint': parse_attr_list(raw_attrs, 'endpoint'),
         # ansible
         'ansible_ssh_port': 22,
         'ansible_ssh_user': raw_attrs['username'],
-        'ansible_ssh_host': raw_attrs['vip_address'],
+        'ansible_ssh_host': raw_attrs.get('vip_address', raw_attrs['ip_address']),
     }
 
     # attrs specific to microservices-infrastructure
