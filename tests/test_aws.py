@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
+from copy import deepcopy
 
 
 @pytest.fixture
@@ -80,6 +81,12 @@ def test_attrs(aws_resource, aws_host, attr, should):
     _, attrs, _ = aws_host(aws_resource, 'module_name')
     assert attr in attrs
     assert attrs[attr] == should
+
+def test_private_ip_default(aws_resource, aws_host):
+    private_resource = deepcopy(aws_resource)
+    private_resource["primary"]["attributes"]["public_ip"] = ""
+    _, attrs, _ = aws_host(private_resource, 'module_name')
+    assert attrs['ansible_ssh_host'] == '10.0.152.191'
 
 
 @pytest.mark.parametrize(

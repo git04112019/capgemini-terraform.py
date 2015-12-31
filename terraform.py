@@ -98,6 +98,16 @@ def calculate_mi_vars(func):
     return inner
 
 
+def _get_ignore_blank(obj, key, default=None):
+    """
+    Get a key in an object, but treat blank string as missing value.
+    """
+    v = obj.get(key, default)
+    if v == "":
+        return default
+    return v
+
+
 def _parse_prefix(source, prefix, sep='.'):
     for compkey, value in source.items():
         try:
@@ -228,7 +238,7 @@ def aws_host(resource, module_name):
         # ansible-specific
         'ansible_ssh_port': 22,
         'ansible_ssh_user': raw_attrs.get('tags.sshUser', 'ubuntu'),
-        'ansible_ssh_host': raw_attrs.get('public_ip', raw_attrs['private_ip']),
+        'ansible_ssh_host': _get_ignore_blank(raw_attrs, 'public_ip', raw_attrs['private_ip']),
     }
 
     # attrs specific to microservices-infrastructure
