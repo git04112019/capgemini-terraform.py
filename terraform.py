@@ -238,7 +238,7 @@ def aws_host(resource, module_name):
         # ansible-specific
         'ansible_ssh_port': 22,
         'ansible_ssh_user': raw_attrs.get('tags.sshUser', 'ubuntu'),
-        'ansible_ssh_host': _get_ignore_blank(raw_attrs, 'public_ip', raw_attrs['private_ip']),
+        'ansible_ssh_host': raw_attrs['private_ip'],
     }
 
     # attrs specific to microservices-infrastructure
