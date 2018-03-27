@@ -1,3 +1,5 @@
+# DEPRECATED - moved into github.com/udacity/berlioz/ (inventory/terraform.py)
+
 # Terraform.py
 
 [![Build Status](https://travis-ci.org/CiscoCloud/terraform.py.svg)](https://travis-ci.org/CiscoCloud/terraform.py)
